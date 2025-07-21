@@ -6,10 +6,12 @@ import (
 
 	"github.com/getitsoIved/shortLink/configs"
 	"github.com/getitsoIved/shortLink/internal/auth"
+	"github.com/getitsoIved/shortLink/pkg/db"
 )
 
 func main() {
 	conf := configs.LoadConfig()
+	_ = db.NewDb(conf)
 	router := http.NewServeMux()
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
 		Config: conf,
