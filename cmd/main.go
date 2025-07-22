@@ -6,15 +6,24 @@ import (
 
 	"github.com/getitsoIved/shortLink/configs"
 	"github.com/getitsoIved/shortLink/internal/auth"
+	"github.com/getitsoIved/shortLink/internal/link"
 	"github.com/getitsoIved/shortLink/pkg/db"
 )
 
 func main() {
 	conf := configs.LoadConfig()
-	_ = db.NewDb(conf)
+	db := db.NewDb(conf)
 	router := http.NewServeMux()
+
+	//Repositories
+	linkRerository := link.NewLinkRepository(db)
+
+	//Handlers
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
 		Config: conf,
+	})
+	link.NewLinkHandler(router, link.LinkHandlerDeps{
+		LinkRepository: linkRerository,
 	})
 
 	server := http.Server{
