@@ -8,6 +8,7 @@ import (
 	"github.com/getitsoIved/shortLink/internal/auth"
 	"github.com/getitsoIved/shortLink/internal/link"
 	"github.com/getitsoIved/shortLink/pkg/db"
+	"github.com/getitsoIved/shortLink/pkg/middleware"
 )
 
 func main() {
@@ -26,9 +27,15 @@ func main() {
 		LinkRepository: linkRerository,
 	})
 
+	// Middlewares
+	stack := middleware.Chain(
+		middleware.CORS,
+		middleware.Logging,
+	)
+
 	server := http.Server{
 		Addr:    ":8081",
-		Handler: router,
+		Handler: stack(router),
 	}
 
 	fmt.Println("Сервер слушает порт 8081")
