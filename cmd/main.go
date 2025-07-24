@@ -7,6 +7,7 @@ import (
 	"github.com/getitsoIved/shortLink/configs"
 	"github.com/getitsoIved/shortLink/internal/auth"
 	"github.com/getitsoIved/shortLink/internal/link"
+	"github.com/getitsoIved/shortLink/internal/user"
 	"github.com/getitsoIved/shortLink/pkg/db"
 	"github.com/getitsoIved/shortLink/pkg/middleware"
 )
@@ -18,10 +19,15 @@ func main() {
 
 	//Repositories
 	linkRerository := link.NewLinkRepository(db)
+	userRepository := user.NewUserRepository(db)
+
+	//Services
+	authService := auth.NewAuthService(userRepository)
 
 	//Handlers
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
-		Config: conf,
+		Config:      conf,
+		AuthService: authService,
 	})
 	link.NewLinkHandler(router, link.LinkHandlerDeps{
 		LinkRepository: linkRerository,
