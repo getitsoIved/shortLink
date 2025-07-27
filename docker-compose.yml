@@ -10,3 +10,4 @@ services:
       - /d/4_SoftwareDevelopment/9_Golang/src/basic_golang/GO-BASICS-6/postgres-data:/data/postgres
     ports:
       - "5432:5432"
+      
