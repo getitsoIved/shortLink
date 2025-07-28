@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: shortLink API
+  description: API для сервиса сокращения ссылок с авторизацией и сбором статистики.
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8081
+    description: Локальный сервер
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    RegisterRequest:
+      allOf:
+        - $ref: '#/components/schemas/AuthRequest'
+        - type: object
+          properties:
+            name:
+              type: string
+
+    LinkRequest:
+      type: object
+      properties:
+        url:
+          type: string
+      required: [url]
+
+    LinkResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        short:
+          type: string
+        url:
+          type: string
+
+    StatItem:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        count:
+          type: integer
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Успешная регистрация
+        '409':
+          description: Пользователь уже существует
+
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /link:
+    get:
+      summary: Получить список ссылок
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список ссылок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinkResponse'
+
+    post:
+      summary: Создать короткую ссылку
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkRequest'
+      responses:
+        '200':
+          description: Ссылка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkResponse'
+
+  /link/{id}:
+    patch:
+      summary: Обновить ссылку
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkRequest'
+      responses:
+        '200':
+          description: Ссылка обновлена
+
+    delete:
+      summary: Удалить ссылку
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Успешное удаление
+
+  /{short}:
+    get:
+      summary: Перейти по короткой ссылке
+      parameters:
+        - in: path
+          name: short
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Редирект на оригинальный URL
+
+  /stat:
+    get:
+      summary: Получить статистику переходов
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: by
+          schema:
+            type: string
+            enum: [day, hour]
+      responses:
+        '200':
+          description: Статистика по диапазону
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatItem'
