@@ -4,15 +4,28 @@ import (
 	"errors"
 
 	"github.com/getitsoIved/shortLink/internal/user"
+	"github.com/getitsoIved/shortLink/pkg/di"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	UserRepository *user.UserRepository
+	UserRepository di.IUserRepository
 }
 
-func NewAuthService(userRepository *user.UserRepository) *AuthService {
+func NewAuthService(userRepository di.IUserRepository) *AuthService {
 	return &AuthService{UserRepository: userRepository}
+}
+
+func (service *AuthService) Login(email, password string) (string, error) {
+	existedUser, _ := service.UserRepository.FindByEmail(email)
+	if existedUser == nil {
+		return "", errors.New(ErrWrongCredetials)
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	if err != nil {
+		return "", errors.New(ErrWrongCredetials)
+	}
+	return existedUser.Email, nil
 }
 
 func (service *AuthService) Register(email, password, name string) (string, error) {
@@ -24,7 +37,6 @@ func (service *AuthService) Register(email, password, name string) (string, erro
 	if err != nil {
 		return "", err
 	}
-
 	user := &user.User{
 		Email:    email,
 		Password: string(hashedPassword),
@@ -35,17 +47,4 @@ func (service *AuthService) Register(email, password, name string) (string, erro
 		return "", err
 	}
 	return user.Email, nil
-}
-
-func (service *AuthService) Login(email, password string) (string, error) {
-	existedUser, _ := service.UserRepository.FindByEmail(email)
-	if existedUser == nil {
-		return "", errors.New(ErrWrongCredetials)
-	}
-	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
-	if err != nil {
-		return "", err
-	}
-
-	return existedUser.Email, nil
 }
