@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres:
     container_name: postgres_go
@@ -5,9 +7,22 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: my_pass
+      POSTGRES_DB: link
       PGDATA: /data/postgres
     volumes:
-      - /d/4_SoftwareDevelopment/9_Golang/src/basic_golang/GO-BASICS-6/postgres-data:/data/postgres
+      - ./postgres-data:/data/postgres
     ports:
       - "5432:5432"
-      
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shortlink_go
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8081"
+    environment:
+      DSN: "host=postgres user=postgres password=my_pass dbname=link port=5432 sslmode=disable"
+      SECRET: "3ZYwtAo1M0rGwiifoASSW4XguJB5FwVJ"
